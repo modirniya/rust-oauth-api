@@ -4,3 +4,10 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+config = "0.13"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+dotenv = "0.15"
+argon2 = "0.5"
+rand_core = { version = "0.6", features = ["std"] }
+thiserror = "1.0"

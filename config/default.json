@@ -1,0 +1,17 @@
+{
+    "server": {
+        "port": 8080,
+        "host": "127.0.0.1"
+    },
+    "database": {
+        "url": "postgres://postgres:postgres@localhost:5432/oauth_api"
+    },
+    "jwt": {
+        "secret": "your-secret-key-here",
+        "expiration_hours": 24
+    },
+    "oauth": {
+        "access_token_expiration_minutes": 60,
+        "refresh_token_expiration_days": 30
+    }
+} 
