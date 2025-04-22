@@ -1,6 +1,7 @@
 mod config;
 mod db;
 mod handlers;
+mod middleware;
 mod models;
 mod utils;
 
