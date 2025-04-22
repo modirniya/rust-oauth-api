@@ -7,12 +7,13 @@ use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 use validator::Validate;
 
+use crate::utils::{
+    hashing::{hash_password, verify_password},
+    jwt::generate_token,
+};
+
 use crate::{
     models::user::CreateUser,
-    utils::{
-        hashing::{hash_password, verify_password},
-        jwt::generate_token,
-    },
 };
 
 #[derive(Debug, Deserialize, Validate)]

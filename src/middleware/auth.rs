@@ -1,14 +1,25 @@
 use async_trait::async_trait;
 use axum::{
     extract::FromRequestParts,
-    headers::{authorization::Bearer, Authorization},
     http::request::Parts,
     RequestPartsExt,
+    response::{IntoResponse, Response},
+    http::StatusCode,
+    Json,
+};
+use axum_extra::{
+    headers::{authorization::Bearer, Authorization},
     TypedHeader,
 };
+use serde::Serialize;
 use uuid::Uuid;
 
 use crate::utils::jwt::{decode_token, TokenError};
+
+#[derive(Debug, Serialize)]
+struct ErrorResponse {
+    error: String,
+}
 
 /// Represents an authenticated user's identity
 #[derive(Debug, Clone)]
@@ -30,6 +41,23 @@ pub enum AuthError {
     
     #[error("Token expired")]
     TokenExpired,
+}
+
+impl IntoResponse for AuthError {
+    fn into_response(self) -> Response {
+        let (status, error_message) = match self {
+            AuthError::MissingCredentials => (StatusCode::UNAUTHORIZED, "Missing authorization header".to_string()),
+            AuthError::InvalidAuthHeader => (StatusCode::UNAUTHORIZED, "Invalid authorization header".to_string()),
+            AuthError::InvalidToken(msg) => (StatusCode::UNAUTHORIZED, msg),
+            AuthError::TokenExpired => (StatusCode::UNAUTHORIZED, "Token expired".to_string()),
+        };
+
+        let body = Json(ErrorResponse {
+            error: error_message,
+        });
+
+        (status, body).into_response()
+    }
 }
 
 /// Extractor for authenticated users.

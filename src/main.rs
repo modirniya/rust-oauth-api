@@ -10,7 +10,9 @@ use axum::{
     Router,
 };
 use std::net::SocketAddr;
+use tokio::net::TcpListener;
 use tower_http::trace::TraceLayer;
+use axum::serve;
 
 #[tokio::main]
 async fn main() {
@@ -34,10 +36,10 @@ async fn main() {
 
     // Start server
     let addr = SocketAddr::from(([127, 0, 0, 1], config.server.port));
+    let listener = TcpListener::bind(addr).await.expect("Failed to bind to address");
     println!("Server listening on {}", addr);
 
-    axum::Server::bind(&addr)
-        .serve(app.into_make_service())
+    serve::serve(listener, app.into_make_service())
         .await
         .unwrap();
 }
