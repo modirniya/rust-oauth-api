@@ -24,6 +24,7 @@ async fn main() {
     // Build application with routes
     let app = Router::new()
         .route("/register", post(handlers::auth::register_handler))
+        .route("/login", post(handlers::auth::login_handler))
         .layer(TraceLayer::new_for_http())
         .with_state(pool);
 

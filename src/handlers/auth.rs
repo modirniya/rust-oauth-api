@@ -9,7 +9,10 @@ use validator::Validate;
 
 use crate::{
     models::user::CreateUser,
-    utils::hashing::hash_password,
+    utils::{
+        hashing::{hash_password, verify_password},
+        jwt::generate_token,
+    },
 };
 
 #[derive(Debug, Deserialize, Validate)]
@@ -20,9 +23,21 @@ pub struct RegisterRequest {
     pub password: String,
 }
 
+#[derive(Debug, Deserialize, Validate)]
+pub struct LoginRequest {
+    #[validate(email(message = "Invalid email format"))]
+    pub email: String,
+    pub password: String,
+}
+
 #[derive(Debug, Serialize)]
 pub struct RegisterResponse {
     pub message: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct LoginResponse {
+    pub token: String,
 }
 
 #[derive(Debug, Serialize)]
@@ -107,4 +122,87 @@ pub async fn register_handler(
     Ok(Json(RegisterResponse {
         message: "User registered successfully".to_string(),
     }))
+}
+
+/// Handler for user login
+///
+/// # Arguments
+/// * `State(pool)` - Database connection pool
+/// * `Json(payload)` - Login request containing email and password
+///
+/// # Returns
+/// * `Result<Json<LoginResponse>, (StatusCode, Json<ErrorResponse>)>` - JWT token or error response
+pub async fn login_handler(
+    State(pool): State<PgPool>,
+    Json(payload): Json<LoginRequest>,
+) -> Result<Json<LoginResponse>, (StatusCode, Json<ErrorResponse>)> {
+    // Validate request payload
+    if let Err(validation_errors) = payload.validate() {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json(ErrorResponse {
+                error: validation_errors.to_string(),
+            }),
+        ));
+    }
+
+    // Fetch user from database
+    let user = sqlx::query!(
+        "SELECT id, hashed_password FROM users WHERE email = $1",
+        payload.email
+    )
+    .fetch_optional(&pool)
+    .await
+    .map_err(|_| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ErrorResponse {
+                error: "Database error".to_string(),
+            }),
+        )
+    })?;
+
+    // Check if user exists and verify password
+    let user = match user {
+        Some(user) => user,
+        None => {
+            return Err((
+                StatusCode::UNAUTHORIZED,
+                Json(ErrorResponse {
+                    error: "Invalid credentials".to_string(),
+                }),
+            ))
+        }
+    };
+
+    // Verify password
+    let is_valid = verify_password(&user.hashed_password, &payload.password).map_err(|_| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ErrorResponse {
+                error: "Failed to verify password".to_string(),
+            }),
+        )
+    })?;
+
+    if !is_valid {
+        return Err((
+            StatusCode::UNAUTHORIZED,
+            Json(ErrorResponse {
+                error: "Invalid credentials".to_string(),
+            }),
+        ));
+    }
+
+    // Generate JWT token
+    let token = generate_token(user.id).map_err(|_| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ErrorResponse {
+                error: "Failed to generate token".to_string(),
+            }),
+        )
+    })?;
+
+    Ok(Json(LoginResponse { token }))
 } 
