@@ -6,7 +6,7 @@ mod models;
 mod utils;
 
 use axum::{
-    routing::post,
+    routing::{get, post},
     Router,
 };
 use std::net::SocketAddr;
@@ -24,8 +24,11 @@ async fn main() {
 
     // Build application with routes
     let app = Router::new()
+        // Auth routes
         .route("/register", post(handlers::auth::register_handler))
         .route("/login", post(handlers::auth::login_handler))
+        // Protected routes
+        .route("/me", get(handlers::user::get_me))
         .layer(TraceLayer::new_for_http())
         .with_state(pool);
 
