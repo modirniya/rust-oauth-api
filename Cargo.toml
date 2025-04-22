@@ -11,3 +11,8 @@ dotenv = "0.15"
 argon2 = "0.5"
 rand_core = { version = "0.6", features = ["std"] }
 thiserror = "1.0"
+sqlx = { version = "0.7", features = ["runtime-tokio", "tls-rustls", "postgres", "uuid", "time"] }
+tokio = { version = "1.0", features = ["full"] }
+dotenvy = "0.15"
+uuid = { version = "1.6", features = ["serde", "v4"] }
+time = { version = "0.3", features = ["serde"] }
