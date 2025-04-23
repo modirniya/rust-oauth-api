@@ -2,13 +2,14 @@ use axum::{
     extract::State,
     http::StatusCode,
     Json,
+    debug_handler,
 };
 use serde::Serialize;
-use sqlx::PgPool;
 use time::OffsetDateTime;
 use uuid::Uuid;
 
 use crate::middleware::auth::AuthUser;
+use crate::AppState;
 
 #[derive(Debug, Serialize)]
 pub struct UserResponse {
@@ -26,20 +27,21 @@ pub struct ErrorResponse {
 ///
 /// # Arguments
 /// * `auth_user` - Authenticated user from JWT middleware
-/// * `State(pool)` - Database connection pool
+/// * `State(state)` - Application state containing database connection pool
 ///
 /// # Returns
 /// * `Result<Json<UserResponse>, (StatusCode, Json<ErrorResponse>)>` - User info or error
+#[debug_handler]
 pub async fn get_me(
     auth_user: AuthUser,
-    State(pool): State<PgPool>,
+    State(state): State<AppState>,
 ) -> Result<Json<UserResponse>, (StatusCode, Json<ErrorResponse>)> {
     // Query user information from database
     let user = sqlx::query!(
         "SELECT email, created_at FROM users WHERE id = $1",
         auth_user.user_id
     )
-    .fetch_optional(&pool)
+    .fetch_optional(&state.db)
     .await
     .map_err(|_| {
         (
@@ -76,6 +78,7 @@ mod tests {
         routing::get,
         Router,
     };
+    use sqlx::PgPool;
     use tower::ServiceExt;
 
     #[tokio::test]
@@ -84,9 +87,11 @@ mod tests {
             .await
             .unwrap();
 
+        let state = AppState { db: pool };
+
         let app = Router::new()
             .route("/me", get(get_me))
-            .with_state(pool);
+            .with_state(state);
 
         let response = app
             .oneshot(Request::builder().uri("/me").body(Body::empty()).unwrap())

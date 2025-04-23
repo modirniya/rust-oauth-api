@@ -29,7 +29,7 @@
 							"host": ["{{base_url}}"],
 							"path": ["register"]
 						},
-						"description": "Register a new user with email and password"
+						"description": "Register a new user with email and password. A verification email will be sent."
 					}
 				},
 				{
@@ -66,6 +66,72 @@
 							"path": ["login"]
 						},
 						"description": "Login with email and password to get JWT token"
+					}
+				},
+				{
+					"name": "Verify Email",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"token\": \"verification-token-from-email\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/verify-email",
+							"host": ["{{base_url}}"],
+							"path": ["verify-email"]
+						},
+						"description": "Verify user's email address using the token received in email"
+					}
+				},
+				{
+					"name": "Request Password Reset",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"test@example.com\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/request-password-reset",
+							"host": ["{{base_url}}"],
+							"path": ["request-password-reset"]
+						},
+						"description": "Request a password reset token to be sent to the user's email"
+					}
+				},
+				{
+					"name": "Reset Password",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"token\": \"reset-token-from-email\",\n    \"new_password\": \"new-password123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/reset-password",
+							"host": ["{{base_url}}"],
+							"path": ["reset-password"]
+						},
+						"description": "Reset user's password using the token received in email"
 					}
 				}
 			]

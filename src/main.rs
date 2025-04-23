@@ -9,10 +9,16 @@ use axum::{
     routing::{get, post},
     Router,
 };
+use sqlx::PgPool;
 use std::net::SocketAddr;
 use tokio::net::TcpListener;
 use tower_http::trace::TraceLayer;
 use axum::serve;
+
+#[derive(Clone)]
+pub struct AppState {
+    pub db: PgPool,
+}
 
 #[tokio::main]
 async fn main() {
@@ -24,15 +30,20 @@ async fn main() {
         .await
         .expect("Failed to create database pool");
 
+    let state = AppState { db: pool.clone() };
+
     // Build application with routes
     let app = Router::new()
         // Auth routes
-        .route("/register", post(handlers::auth::register_handler))
-        .route("/login", post(handlers::auth::login_handler))
+        .route("/register", post(handlers::auth::register))
+        .route("/login", post(handlers::auth::login))
+        .route("/verify-email", post(handlers::auth::verify_email))
+        .route("/request-password-reset", post(handlers::auth::request_password_reset))
+        .route("/reset-password", post(handlers::auth::reset_password))
         // Protected routes
         .route("/me", get(handlers::user::get_me))
         .layer(TraceLayer::new_for_http())
-        .with_state(pool);
+        .with_state(state);
 
     // Start server
     let addr = SocketAddr::from(([127, 0, 0, 1], config.server.port));
